@@ -1,5 +1,10 @@
 # Sandrail
 
+[![PyPI](https://img.shields.io/pypi/v/sandrail)](https://pypi.org/project/sandrail/)
+[![Python](https://img.shields.io/pypi/pyversions/sandrail)](https://pypi.org/project/sandrail/)
+[![CI](https://github.com/KaranPatel001/sandrail/actions/workflows/ci.yml/badge.svg)](https://github.com/KaranPatel001/sandrail/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 Sandrail is a small coding-agent harness with a benchmark that grades on hidden tests. You give
 it a model and a folder of bug-fix tasks. It runs the agent in a sandboxed copy of each repo,
 grades the result against tests the agent never saw, flags runs that tamper with the tests, and

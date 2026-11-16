@@ -1,0 +1,17 @@
+id: query-string-equals
+title: parse_query truncates values containing '='
+difficulty: easy
+tags:
+- parsing
+- urls
+instruction: |
+  `urlkit.parse_query` cuts values off at the second `=` sign. Signed URLs and base64 tokens
+  break:
+
+  ```python
+  >>> parse_query("sig=abc==&next=/home")
+  {'sig': ['abc'], 'next': ['/home']}     # expected {'sig': ['abc=='], ...}
+  ```
+
+  Only the first `=` in a pair separates the key from the value. Existing behavior (percent
+  decoding, `+` as space, repeated keys, keys with no `=`) must not change.

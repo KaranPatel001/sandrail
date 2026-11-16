@@ -1,0 +1,17 @@
+id: date-range-inclusive
+title: iter_days skips the end date
+difficulty: easy
+tags:
+- dates
+- off-by-one
+instruction: |
+  `calendarx.iter_days(start, end)` is documented as inclusive of `end`, but the last day is
+  never yielded:
+
+  ```python
+  >>> list(iter_days(date(2024, 3, 1), date(2024, 3, 3)))
+  [date(2024, 3, 1), date(2024, 3, 2)]
+  ```
+
+  Expected three dates. `iter_days(d, d)` should yield `d` once. This also makes
+  `count_weekdays` undercount: Monday to Sunday of one week should be 5.

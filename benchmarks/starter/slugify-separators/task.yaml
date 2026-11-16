@@ -1,0 +1,18 @@
+id: slugify-separators
+title: slugify emits repeated separators
+difficulty: easy
+tags:
+- strings
+- regex
+instruction: |
+  `textkit.slugify` is supposed to turn a title into a clean URL slug, but titles with punctuation
+  or several spaces come out with repeated separators:
+
+  ```python
+  >>> slugify("Hello, World!")
+  'hello--world'
+  ```
+
+  Expected `'hello-world'`. Per the docstring, every run of characters that are not letters or
+  digits should become a single separator, and the slug must not start or end with one. This
+  should also hold for a custom `sep`.

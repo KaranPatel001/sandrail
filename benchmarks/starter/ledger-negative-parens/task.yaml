@@ -1,0 +1,20 @@
+id: ledger-negative-parens
+title: Accounting-style negatives parsed as positive
+difficulty: medium
+tags:
+- parsing
+- decimal
+instruction: |
+  Our bank export writes refunds in accounting notation, with parentheses: `(12.50)` means
+  -12.50. `ledger.parse_amount` silently reads them as positive numbers, so category totals in
+  `total_by_category` are too high.
+
+  ```python
+  >>> parse_amount("(12.50)")
+  Decimal('12.50')        # expected Decimal('-12.50')
+  >>> parse_amount("$(1,200.00)")
+  Decimal('1200.00')      # expected Decimal('-1200.00')
+  ```
+
+  Leading-minus amounts (`-3.00`) already work and must keep working. Unparseable text should
+  still raise `ValueError`.

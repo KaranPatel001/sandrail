@@ -1,0 +1,20 @@
+id: deep-merge-nested
+title: deep_merge clobbers nested keys and mutates its input
+difficulty: medium
+tags:
+- dicts
+- recursion
+instruction: |
+  `confmerge.deep_merge(base, override)` is meant to merge configuration recursively and return a
+  new dict without modifying either argument. Two problems show up with nested sections:
+
+  ```python
+  base = {"db": {"host": "localhost", "pool": {"min": 1, "max": 5}}}
+  override = {"db": {"pool": {"max": 20}}}
+  merged = deep_merge(base, override)
+  merged["db"]["pool"]   # {'max': 20} -- "min" was lost
+  base["db"]["pool"]     # also {'max': 20} -- base was modified
+  ```
+
+  Expected `merged["db"]["pool"] == {"min": 1, "max": 20}` and `base` left unchanged, at any
+  nesting depth. A non-dict value in `override` should still replace whatever is in `base`.

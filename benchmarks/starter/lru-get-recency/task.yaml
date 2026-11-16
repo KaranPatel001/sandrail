@@ -1,0 +1,19 @@
+id: lru-get-recency
+title: LRUCache evicts recently read keys
+difficulty: easy
+tags:
+- data-structures
+instruction: |
+  `cachekit.LRUCache` evicts the wrong entry. Reading a key should make it the most recently
+  used, but it doesn't:
+
+  ```python
+  cache = LRUCache(2)
+  cache.put("a", 1)
+  cache.put("b", 2)
+  cache.get("a")       # touch "a"
+  cache.put("c", 3)    # should evict "b"
+  cache.get("a")       # returns None, expected 1
+  ```
+
+  Membership checks (`"a" in cache`) should not count as a use.

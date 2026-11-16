@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sandrail"
+version = "0.1.0"
+description = "A coding-agent harness with a hidden-test benchmark and reward-hacking checks."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "Karan Patel" }]
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+claude = ["anthropic>=2.0"]
+dev = ["pytest>=8.0", "anthropic>=2.0"]
+
+[project.scripts]
+sandrail = "sandrail.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["sandrail*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["benchmarks", ".venv", "results"]
+addopts = "-p no:cacheprovider"

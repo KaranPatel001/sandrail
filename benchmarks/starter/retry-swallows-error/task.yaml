@@ -1,0 +1,21 @@
+id: retry-swallows-error
+title: retry decorator returns None after the last failure
+difficulty: medium
+tags:
+- decorators
+- errors
+instruction: |
+  Functions wrapped with `retrying.retry` return `None` when every attempt fails, so callers
+  carry on with a bogus value instead of seeing the error:
+
+  ```python
+  @retry(times=3, exceptions=(ConnectionError,))
+  def fetch():
+      raise ConnectionError("down")
+
+  fetch()   # returns None
+  ```
+
+  After the final attempt the last exception should propagate. The function must be attempted
+  exactly `times` times, `sleep(delay)` should run between attempts only (not after the last
+  one), and exceptions not listed in `exceptions` should propagate immediately without retrying.

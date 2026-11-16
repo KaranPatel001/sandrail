@@ -1,0 +1,19 @@
+id: cart-cent-rounding
+title: Cart totals are a cent short
+difficulty: medium
+tags:
+- floats
+- money
+instruction: |
+  Customers are being undercharged by a cent on some items. `shop.to_cents` converts dollar
+  floats to integer cents, and some prices come out one cent low:
+
+  ```python
+  >>> to_cents(19.99)
+  1998        # expected 1999
+  >>> to_cents(0.29)
+  28          # expected 29
+  ```
+
+  `to_cents` should round to the nearest cent (halves round up, e.g. `1.005` -> `101`), and
+  `Cart.subtotal_cents` / `Cart.total_cents` should be correct as a result.

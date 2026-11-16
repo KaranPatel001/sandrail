@@ -1,0 +1,19 @@
+id: semver-numeric-compare
+title: Version comparison is lexicographic
+difficulty: easy
+tags:
+- parsing
+- sorting
+instruction: |
+  `versions.compare` and `versions.latest` order version numbers like strings, so `1.10.0` is
+  treated as older than `1.9.0`:
+
+  ```python
+  >>> compare("1.10.0", "1.9.0")
+  -1                       # expected 1
+  >>> latest(["1.2.0", "1.10.0", "1.9.9"])
+  '1.9.9'                  # expected '1.10.0'
+  ```
+
+  Each of major/minor/patch should be compared numerically. A leading `v` and a pre-release
+  suffix after `-` are accepted by `parse` today and should stay accepted.

@@ -10,8 +10,21 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
 authors = [{ name = "Karan Patel" }]
+keywords = ["llm", "agents", "evals", "benchmark", "coding-agent", "reward-hacking"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Testing",
+]
 dependencies = [
     "pyyaml>=6.0",
+    # Tasks are graded by running pytest with the same interpreter.
+    "pytest>=8.0",
 ]
 
 [project.optional-dependencies]
@@ -21,8 +34,24 @@ dev = ["pytest>=8.0", "anthropic>=2.0"]
 [project.scripts]
 sandrail = "sandrail.cli:main"
 
-[tool.setuptools.packages.find]
-include = ["sandrail*"]
+[project.urls]
+Homepage = "https://github.com/KaranPatel001/sandrail"
+Repository = "https://github.com/KaranPatel001/sandrail"
+Issues = "https://github.com/KaranPatel001/sandrail/issues"
+
+[tool.setuptools]
+# The starter benchmark lives at benchmarks/ in the repo and ships inside the
+# wheel as sandrail.benchmarks, so `pip install sandrail` can run it.
+packages = ["sandrail", "sandrail.models", "sandrail.benchmarks"]
+
+[tool.setuptools.package-dir]
+"sandrail.benchmarks" = "benchmarks"
+
+[tool.setuptools.package-data]
+"sandrail.benchmarks" = ["starter/**/*"]
+
+[tool.setuptools.exclude-package-data]
+"sandrail.benchmarks" = ["**/__pycache__/*", "**/*.pyc"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

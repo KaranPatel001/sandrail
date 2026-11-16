@@ -61,6 +61,23 @@ class Task:
         return f"# {self.title}\n\n{self.instruction.strip()}\n"
 
 
+def default_tasks_dir() -> Path:
+    """The starter benchmark: ``./benchmarks/starter`` if present, else the copy bundled in the package."""
+    local = Path("benchmarks") / "starter"
+    if local.is_dir():
+        return local
+    try:
+        from importlib.resources import files
+
+        bundled = Path(str(files("sandrail.benchmarks") / "starter"))
+        if bundled.is_dir():
+            return bundled
+    except (ModuleNotFoundError, TypeError):
+        pass
+    # Source checkout without an install: <repo>/benchmarks/starter.
+    return Path(__file__).resolve().parent.parent / "benchmarks" / "starter"
+
+
 def load_task(root: Path) -> Task:
     root = Path(root)
     spec = yaml.safe_load((root / "task.yaml").read_text(encoding="utf-8")) or {}

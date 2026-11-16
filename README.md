@@ -6,10 +6,13 @@ grades the result against tests the agent never saw, flags runs that tamper with
 writes a report covering pass rate, steps, tokens and estimated cost.
 
 ```bash
-pip install -e ".[dev]"
-sandrail run --tasks benchmarks/starter --model scripted:reference        # offline, 12/12
-sandrail run --tasks benchmarks/starter --model claude-opus-5-5 --runs 3  # needs an API key, billed
+pip install "sandrail[claude]"
+sandrail run --model scripted:reference        # offline, 12/12 on the bundled starter set
+sandrail run --model claude-opus-5-5 --runs 3  # needs an API key, billed
 ```
+
+The starter benchmark ships inside the package, so `--tasks` is optional. Inside a source checkout
+(`pip install -e ".[dev]"`), `./benchmarks/starter` is used instead.
 
 ## Design
 

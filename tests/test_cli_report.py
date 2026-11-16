@@ -67,3 +67,15 @@ def test_cli_list_and_validate(capsys):
 
 def test_cli_rejects_zero_runs():
     assert main(["run", "--model", "scripted:noop", "--runs", "0"]) == 2
+
+
+def test_default_tasks_dir_prefers_local_checkout(tmp_path, monkeypatch):
+    from sandrail.task import default_tasks_dir, load_tasks
+
+    (tmp_path / "benchmarks" / "starter").mkdir(parents=True)
+    monkeypatch.chdir(tmp_path)
+    assert default_tasks_dir().as_posix() == "benchmarks/starter"
+
+    # Without a local copy, the bundled starter set is used.
+    monkeypatch.chdir(tmp_path / "benchmarks")
+    assert len(load_tasks(default_tasks_dir())) == 12

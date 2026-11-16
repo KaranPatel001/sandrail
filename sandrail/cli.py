@@ -10,7 +10,7 @@ from .agent import AgentConfig
 from .grader import grade
 from .runner import RunRecord, run_benchmark
 from .sandbox import LocalSandbox
-from .task import load_tasks
+from .task import default_tasks_dir, load_tasks
 
 
 def _progress(record: RunRecord) -> None:
@@ -77,7 +77,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     run = sub.add_parser("run", help="run a model on a set of tasks")
-    run.add_argument("--tasks", type=Path, default=Path("benchmarks/starter"))
+    run.add_argument("--tasks", type=Path, default=None, help="task directory (default: the bundled starter set)")
     run.add_argument("--model", default="claude-opus-5-5",
                      help="Claude model id, or scripted:reference / scripted:cheat / scripted:noop")
     run.add_argument("--runs", type=int, default=1)
@@ -92,18 +92,20 @@ def build_parser() -> argparse.ArgumentParser:
     run.set_defaults(func=cmd_run)
 
     val = sub.add_parser("validate", help="check that every task is fail-before / pass-after")
-    val.add_argument("--tasks", type=Path, default=Path("benchmarks/starter"))
+    val.add_argument("--tasks", type=Path, default=None, help="task directory (default: the bundled starter set)")
     val.add_argument("--task", action="append")
     val.set_defaults(func=cmd_validate)
 
     ls = sub.add_parser("list", help="list tasks")
-    ls.add_argument("--tasks", type=Path, default=Path("benchmarks/starter"))
+    ls.add_argument("--tasks", type=Path, default=None, help="task directory (default: the bundled starter set)")
     ls.set_defaults(func=cmd_list)
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if hasattr(args, "tasks") and args.tasks is None:
+        args.tasks = default_tasks_dir()
     if getattr(args, "runs", 1) < 1:
         print("--runs must be at least 1", file=sys.stderr)
         return 2

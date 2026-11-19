@@ -43,7 +43,9 @@ class ClaudeModel(Model):
         if client is None:
             import anthropic  # imported lazily so the package works without the extra
 
-            client = anthropic.Anthropic()
+            # The agent loop owns retries (see sandrail/retry.py). Leaving the SDK's
+            # own retries on would multiply the two attempt counts.
+            client = anthropic.Anthropic(max_retries=0)
         self.client = client
 
     # -- request building -------------------------------------------------

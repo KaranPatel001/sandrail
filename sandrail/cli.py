@@ -28,12 +28,23 @@ def cmd_run(args: argparse.Namespace) -> int:
     claude_kwargs = {}
     if not args.model.startswith("scripted:"):
         claude_kwargs = {"effort": args.effort, "fallbacks": not args.no_fallbacks}
+    out_dir = args.out
+    if args.resume is not None:
+        if args.out is not None and args.out != args.resume:
+            print("--resume already names the output directory; drop --out", file=sys.stderr)
+            return 2
+        if not (args.resume / "results.jsonl").exists():
+            print(f"nothing to resume: {args.resume / 'results.jsonl'} does not exist", file=sys.stderr)
+            return 2
+        out_dir = args.resume
+        print(f"Resuming {args.resume}")
     print(f"Running {args.model} on {args.tasks} ({args.runs} run(s) per task)")
     records, out_dir = run_benchmark(
         args.tasks,
         args.model,
         runs=args.runs,
-        out_dir=args.out,
+        out_dir=out_dir,
+        resume=args.resume is not None,
         config=config,
         sandbox_kind=args.sandbox,
         only=args.task or None,
@@ -82,6 +93,8 @@ def build_parser() -> argparse.ArgumentParser:
                      help="Claude model id, or scripted:reference / scripted:cheat / scripted:noop")
     run.add_argument("--runs", type=int, default=1)
     run.add_argument("--out", type=Path, default=None, help="output directory (default results/<time>-<model>)")
+    run.add_argument("--resume", type=Path, default=None, metavar="DIR",
+                     help="continue an interrupted run in DIR: finished runs are kept, the rest are run")
     run.add_argument("--task", action="append", help="only run this task id (repeatable)")
     run.add_argument("--sandbox", choices=["local", "docker"], default="local")
     run.add_argument("--max-steps", type=int, default=30)

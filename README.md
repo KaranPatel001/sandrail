@@ -132,6 +132,7 @@ sandrail validate --tasks benchmarks/starter
 sandrail run      --tasks benchmarks/starter --model claude-opus-5-5 --runs 3 \
                   --max-steps 30 --token-budget 400000 --effort high --sandbox local
 sandrail run      --model scripted:cheat --task lru-get-recency --out results/cheat-demo
+sandrail run      --model claude-opus-5-5 --runs 3 --resume results/20261119-101500-claude-opus-5-5
 ```
 
 Outputs go to `results/<timestamp>-<model>/` unless you pass `--out`:
@@ -144,6 +145,30 @@ Outputs go to `results/<timestamp>-<model>/` unless you pass `--out`:
 
 Cost is an **estimate** based on the list prices in `sandrail/pricing.py`. It shows `n/a` for
 models that aren't in the table.
+
+### Resuming an interrupted run
+
+`--resume DIR` continues a run that stopped part-way (Ctrl-C, a crash, a closed laptop). Pass the
+same `--model`, `--tasks`, `--runs` and `--task` options as before. Runs already recorded in
+`DIR/results.jsonl` are kept and skipped, the rest are run, and the report is rebuilt from both.
+
+- Runs that ended in `model_error` are run again. The provider failed there, not the model.
+- A half-written last line, left by a killed process, is ignored, so that run is redone.
+- Raising `--runs` on resume adds the extra runs for every task.
+- Kept records are not re-checked against the model or settings, so resume with the options the
+  run started with.
+
+### Transient model errors
+
+A rate limit or a dropped connection says nothing about the model, so the agent loop retries the
+same request before giving up: up to 5 attempts per model call, waiting between 0.5 s and 30 s with
+exponential backoff and jitter, and honouring a `Retry-After` header. Retried errors are HTTP 408,
+409, 429, 500, 502, 503, 504 and 529, plus timeouts and connection failures. Everything else
+(a bad request, an invalid key, an exhausted quota) ends the run as `model_error` at once.
+
+Retries don't use up steps. Each one is written to the trajectory as a `retry` event, and the
+count is stored as `retries` in `results.jsonl`. The Claude adapter turns off the SDK's own retries
+so the two layers don't multiply.
 
 The token budget counts input plus output tokens summed across every model call, and the full
 context is re-sent each call. So budget use grows roughly with the square of the number of steps.

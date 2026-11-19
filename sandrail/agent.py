@@ -11,9 +11,10 @@ import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, TextIO
+from typing import Any, Callable, TextIO
 
-from .models.base import Model, Usage
+from .models.base import Model, ModelResponse, Usage
+from .retry import RetryPolicy, is_transient
 from .sandbox import Sandbox
 from .tools import Toolbox, default_tools
 
@@ -39,6 +40,8 @@ class AgentConfig:
     command_timeout: float = 60.0
     max_command_timeout: float = 300.0
     system_prompt: str = SYSTEM_PROMPT
+    # Transient model errors (rate limits, timeouts, 5xx) are retried per call.
+    retry: RetryPolicy = field(default_factory=RetryPolicy)
 
 
 @dataclass
@@ -51,6 +54,8 @@ class AgentResult:
     duration: float = 0.0
     served_by: list[str] = field(default_factory=list)
     error: str | None = None
+    # Model calls that failed with a transient error and were tried again.
+    retries: int = 0
 
 
 def trim(text: str, limit: int) -> str:
@@ -89,8 +94,15 @@ class Trajectory:
 
 
 class Agent:
-    def __init__(self, model: Model, config: AgentConfig | None = None, toolbox: Toolbox | None = None):
+    def __init__(
+        self,
+        model: Model,
+        config: AgentConfig | None = None,
+        toolbox: Toolbox | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+    ):
         self.model = model
+        self.sleep = sleep
         self.config = config or AgentConfig()
         self.toolbox = toolbox or Toolbox(
             default_tools(self.config.command_timeout, self.config.max_command_timeout)
@@ -111,6 +123,7 @@ class Agent:
         started = time.monotonic()
         steps = 0
         n_tool_calls = 0
+        retries = 0
         served_by: list[str] = []
         final_text = ""
         status = "max_steps"
@@ -131,8 +144,11 @@ class Agent:
             while steps < cfg.max_steps:
                 steps += 1
                 try:
-                    response = self.model.complete(cfg.system_prompt, messages, tool_specs)
-                except Exception as exc:  # provider errors end the run, not the benchmark
+                    response, attempts = self._complete(messages, tool_specs, steps, traj)
+                    retries += attempts - 1
+                except _ModelFailure as failure:  # provider errors end the run, not the benchmark
+                    exc = failure.error
+                    retries += failure.attempts - 1
                     status, error = "model_error", f"{type(exc).__name__}: {exc}"
                     traj.log({"type": "error", "step": steps, "error": error})
                     break
@@ -194,6 +210,7 @@ class Agent:
                 "tool_calls": n_tool_calls,
                 "usage": usage.to_dict(),
                 "duration": round(duration, 3),
+                "retries": retries,
                 "error": error,
             })
             traj.close()
@@ -207,4 +224,45 @@ class Agent:
             duration=duration,
             served_by=served_by,
             error=error,
+            retries=retries,
         )
+
+    def _complete(
+        self,
+        messages: list[dict[str, Any]],
+        tool_specs: list[dict[str, Any]],
+        step: int,
+        traj: Trajectory,
+    ) -> tuple[ModelResponse, int]:
+        """Call the model, retrying transient errors. Returns the response and the attempts used.
+
+        A retry re-sends the same request: the conversation is only extended
+        once a response has been accepted, so nothing is duplicated in history.
+        """
+        policy = self.config.retry
+        attempt = 0
+        while True:
+            attempt += 1
+            try:
+                return self.model.complete(self.config.system_prompt, messages, tool_specs), attempt
+            except Exception as exc:
+                if attempt >= policy.max_attempts or not is_transient(exc):
+                    raise _ModelFailure(exc, attempt) from exc
+                delay = policy.delay(attempt, exc)
+                traj.log({
+                    "type": "retry",
+                    "step": step,
+                    "attempt": attempt,
+                    "delay": round(delay, 3),
+                    "error": f"{type(exc).__name__}: {exc}",
+                })
+                self.sleep(delay)
+
+
+class _ModelFailure(Exception):
+    """A model call that failed for good, with the number of attempts made."""
+
+    def __init__(self, error: Exception, attempts: int):
+        super().__init__(str(error))
+        self.error = error
+        self.attempts = attempts

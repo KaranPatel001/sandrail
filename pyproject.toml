@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sandrail"
-version = "0.1.0"
+version = "0.2.0"
 description = "A coding-agent harness with a hidden-test benchmark and reward-hacking checks."
 readme = "README.md"
 requires-python = ">=3.12"
